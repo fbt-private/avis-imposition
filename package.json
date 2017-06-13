@@ -1,6 +1,6 @@
 {
   "description": "Interroge le service de vérification des avis d'imposition",
-  "main": "server.js",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/fredericbonnet/avis-imposition.git"
@@ -9,6 +9,7 @@
   "dependencies": {
     "express": "^4.15.3",
     "phantom": "^4.0.4",
+    "sqlite": "^2.8.0",
     "svair-api": "git+https://github.com/sgmap/api-avis-imposition.git"
   }
 }
