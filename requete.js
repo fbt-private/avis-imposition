@@ -1,8 +1,8 @@
 const phantom = require('phantom');
 
-// Utilise les fonctions de api-avis-imposition pour le décodage.
-const parseResponse = require('../api-avis-imposition/utils/parse').result
-const getYearFromReferenceAvis = require('../api-avis-imposition/utils/year')
+// Utilise les fonctions de svair-api pour le décodage.
+const parseResponse = require('svair-api/utils/parse').result
+const getYearFromReferenceAvis = require('svair-api/utils/year')
 
 /**
  * Fonction principale du module: exécute la requête sur le serveur des impôts.
@@ -67,7 +67,7 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
                                     }
                                 })
                                 .then((body) => {
-                                    // Décode les données de la page (utilise le code de api-avis-imposition).
+                                    // Décode les données de la page (utilise le code de svair-api).
                                     parseResponse(body, getYearFromReferenceAvis(referenceAvis), (err, result) => {
                                         if (err) {
                                             console.error(err);
