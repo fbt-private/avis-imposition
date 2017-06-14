@@ -18,7 +18,6 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
             instance.createPage()
                 .then((page) => {
                     // Simple logging
-                    /*
                     page.on("onResourceRequested", function (requestData) {
                         console.info('Requesting', requestData.url);
                     });
@@ -28,7 +27,6 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
                     page.on("onConsoleMessage", function (msg) {
                         console.info('>>> ', msg);
                     });
-                    */
 
                     // Ouvre la page du formulaire.
                     page.open(formURL)
