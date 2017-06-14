@@ -62,6 +62,19 @@ app.get('/requete', function (req, res, next) {
   }
 });
 
+/**
+ * Purge de la table avis.
+ */
+app.get('/purge', function (req, res, next) {
+  db.run('DELETE FROM avis')
+  .then(function() {
+    res.send('OK');
+  })
+  .catch(function (err) {
+    next(err);
+  });
+});
+
 /*
  * Initalisation de l'application.
  */
