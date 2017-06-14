@@ -12,10 +12,12 @@ const app = express();
 var selectAvis; // SQL Statement pour la recherche d'avis dans la table.
 var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
 
+app.use(express.static('public'));
+
 /**
  * Service web principal.
  */
-app.get('/requete', function (req, res, next) {
+app.get('/recherche', function (req, res, next) {
   if (!req.query.numeroFiscal || !req.query.referenceAvis) {
     // Paramètres manquants.
     return res.status(400).send({
