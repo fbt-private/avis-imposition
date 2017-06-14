@@ -1,6 +1,9 @@
 {
   "description": "Interroge le service de vérification des avis d'imposition",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/fredericbonnet/avis-imposition.git"
