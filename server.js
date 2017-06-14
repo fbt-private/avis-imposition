@@ -2,8 +2,8 @@ const db = require('sqlite');
 const express = require('express');
 const requete = require('./requete');
 
-const server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-const server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+const server_port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+const server_ip_address = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
