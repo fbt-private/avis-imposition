@@ -1,0 +1,140 @@
+<html>
+
+<head>
+    <title>Vérification d'avis d'imposition</title>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+
+    <!-- Font-Awesome -->
+    <script src="https://use.fontawesome.com/713c9818e4.js"></script>
+
+    <!-- Bootstrap 3.3.7 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+        crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="page-header">
+            <h1>Vérification d'avis d'imposition</h1>
+        </div>
+
+        <form id="formulaire-recherche" class="form-horizontal" action="#">
+            <div class="form-group">
+                <label for="numeroFiscal" class="col-sm-2">Numéro fiscal</label>
+                <div class="col-sm-3"><input type="text" class="form-control" id="numeroFiscal" maxlength="13" placeholder="1234567890123"></div>
+
+            </div>
+            <div class="form-group">
+                <label for="referenceAvis" class="col-sm-2">Référence avis</label>
+                <div class="col-sm-3"><input type="text" class="form-control" id="referenceAvis" maxlength="13" placeholder="1234567890ABC"></div>
+            </div>
+            <button id="rechercher" type="submit" class="btn btn-default" data-processing-text="<i class='fa fa-circle-o-notch fa-spin'></i> Recherche en cours...">Rechercher</button>
+            <button id="purger" class="btn btn-default">Purger</button>
+            <span id="resultat-purge"></span>
+        </form>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Résultat</h3>
+            </div>
+            <div class="panel-body">
+                <pre id="resultat"></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="message">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fermer"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="titre-message"></h4>
+                </div>
+                <div class="modal-body">
+                    <p id="texte-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <script>
+        function activerFormulaire(etat) {
+            $('#formulaire-recherche').find('input, button').prop('disabled', !etat);
+        }
+        function erreur(titre, texte) {
+            $("#titre-message").text(titre);
+            $("#texte-message").text(texte);
+            $("#message").modal('show');
+        }
+        function afficherResultat(data) {
+            $('#resultat').text(JSON.stringify(data, null, "  "));
+        }
+        $('#formulaire-recherche').submit(function () {
+            activerFormulaire(false);
+            $('#rechercher').button('processing');
+            $('#resultat').text('');
+            $.ajax({
+                url: './recherche',
+                data: {
+                    numeroFiscal: $('#numeroFiscal').val(),
+                    referenceAvis: $('#referenceAvis').val(),
+                },
+                dataType: 'json',
+            })
+                .done(function (data) {
+                    afficherResultat(data);
+                })
+                .fail(function (err) {
+                    erreur(err.responseJSON.message, err.responseJSON.explaination);
+                })
+                .always(function () {
+                    activerFormulaire(true);
+                    $('#rechercher').button('reset');
+                });
+            return false;
+        });
+
+        $('#purger').click(function () {
+            activerFormulaire(false);
+            $('#resultat-purge').text('Purge en cours...');
+            $.ajax({
+                url: './purge',
+            })
+                .done(function (data) {
+                    $('#resultat-purge').text('Purge effectuée !');
+                    $('#purger').button('done');
+                })
+                .fail(function (err) {
+                    $('#resultat-purge').text('Erreur !');
+                })
+                .always(function () {
+                    $('#resultat-purge').show();
+                    activerFormulaire(true);
+                    setTimeout(function () {
+                        $('#resultat-purge').hide();
+                    }, 1000);
+                });
+            return false;
+        });
+    </script>
+
+
+</body>
+
+</html>
