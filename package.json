@@ -2,7 +2,7 @@
   "description": "Interroge le service de vérification des avis d'imposition",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
