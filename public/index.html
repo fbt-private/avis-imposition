@@ -31,7 +31,6 @@
             <div class="form-group">
                 <label for="numeroFiscal" class="col-sm-2">Numéro fiscal</label>
                 <div class="col-sm-3"><input type="text" class="form-control" id="numeroFiscal" maxlength="13" placeholder="1234567890123"></div>
-
             </div>
             <div class="form-group">
                 <label for="referenceAvis" class="col-sm-2">Référence avis</label>
@@ -44,10 +43,73 @@
 
         <div class="panel panel-default">
             <div class="panel-heading">
+                <h3 class="panel-title">Barême</h3>
+            </div>
+            <div class="panel-body">
+                <table class="table">
+                    <tr>
+                        <th>Nombre de personnes composant le ménage</th>
+                        <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
+                        <th>Plafonds de revenus du ménage pour les autres régions (€)</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>19 803</td>
+                        <td>14 308</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>29 066</td>
+                        <td>20 925</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>34 906</td>
+                        <td>25 166</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>40 758</td>
+                        <td>29 400</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>46 630</td>
+                        <td>33 652</td>
+                    </tr>
+                    <tr>
+                        <td>Par personne supplémentaire</td>
+                        <td>+ 5 860</td>
+                        <td>+ 4 241</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
                 <h3 class="panel-title">Résultat</h3>
             </div>
             <div class="panel-body">
-                <pre id="resultat"></pre>
+                <table id="resultat" class="table" style="display: none">
+                    <tr>
+                        <th width="33%">Nombre de personnes</th>
+                        <td id="nbPersonnes"></td>
+                    </tr>
+                    <tr>
+                        <th>Revenu fiscal de référence</th>
+                        <td id="revenuFiscalReference"></td>
+                    </tr>
+                    <tr>
+                        <th>Eligibilité Île-de-France</th>
+                        <td id="eligibiliteIdf"></td>
+                    </tr>
+                    <tr>
+                        <th>Eligibilité régions</th>
+                        <td id="eligibiliteRegions"></td>
+                    </tr>
+                </table>
+                <pre id="resultat-brut" style="display: none"></pre>
             </div>
         </div>
 
@@ -82,13 +144,67 @@
             $("#texte-message").text(texte);
             $("#message").modal('show');
         }
-        function afficherResultat(data) {
-            $('#resultat').text(JSON.stringify(data, null, "  "));
+        function effacerResultat() {
+            $('#resultat').hide();
+            $('#resultat-brut').text('').hide();
+        }
+        function afficherResultat(resultat) {
+            // Affichage des données JSON brutes
+            $('#resultat-brut').text(JSON.stringify(resultat, null, "  ")).show();
+
+            // Affichage des données relatives au barême
+            $('#resultat').show();
+            var nbPersonnes = 1 + (resultat.nombrePersonnesCharge || 0);
+            if (resultat.declarant2) {
+                nbPersonnes++;
+            }
+            $('#nbPersonnes').text(nbPersonnes);
+            $('#revenuFiscalReference').text(resultat.revenuFiscalReference);
+
+            // Eligibilité
+            var baremeIdf = [
+                5860,  // personne supplémentaire
+                19803, // 0 personnes
+                29066, // 2 personnes
+                34906, // 3 personnes
+                40758, // 4 personnes
+                46630, // 5 personnes      
+            ];
+            var baremeRegions = [
+                4241,  // personne supplémentaire
+                14308, // 0 personnes
+                20925, // 2 personnes
+                25166, // 3 personnes
+                29400, // 4 personnes
+                33652, // 5 personnes
+            ];
+
+            var plafondIdf;
+            if (nbPersonnes < baremeIdf.length) {
+                plafondIdf = baremeIdf[nbPersonnes]
+            } else {
+                plafondIdf = baremeIdf[baremeIdf.length - 1] + baremeIdf[0] * (nbPersonnes - baremeIdf.length + 1);
+            }
+            var eligibiliteIdf = (resultat.revenuFiscalReference <= plafondIdf);
+            $('#eligibiliteIdf').text(eligibiliteIdf ? 'Oui' : 'Non')
+                .toggleClass('success', eligibiliteIdf)
+                .toggleClass('danger', !eligibiliteIdf);
+
+            var plafondRegions;
+            if (nbPersonnes < baremeRegions.length) {
+                plafondRegions = baremeRegions[nbPersonnes]
+            } else {
+                plafondRegions = baremeRegions[baremeIdf.length - 1] + baremeRegions[0] * (nbPersonnes - baremeRegions.length + 1);
+            }
+            var eligibiliteRegions = (resultat.revenuFiscalReference <= plafondRegions);
+            $('#eligibiliteRegions').text(eligibiliteRegions ? 'Oui' : 'Non')
+                .toggleClass('success', eligibiliteRegions)
+                .toggleClass('danger', !eligibiliteRegions);
         }
         $('#formulaire-recherche').submit(function () {
             activerFormulaire(false);
+            effacerResultat();
             $('#rechercher').button('processing');
-            $('#resultat').text('');
             $.ajax({
                 url: './recherche',
                 data: {
