@@ -74,13 +74,13 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
                                             instance.exit();
                                             done(err, result);
                                         } else {
-                                            // Succès !
-                                            // TODO screenshot
-                                            // page.render('test.png')
-                                            //     .then(() => {
+                                            // Succès ! On capture la page et on renvoie les données JPEG en base64.
+                                            page.renderBase64('JPG')
+                                                .then((data) => {
                                                     instance.exit();
+                                                    result.capture = data;
                                                     done(err, result);
-                                                // });
+                                                });
                                         }
                                     });
                                 })
