@@ -43,7 +43,7 @@
 
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 class="panel-title">Barême</h3>
+                <h3 class="panel-title">Barème</h3>
             </div>
             <div class="panel-body">
                 <table class="table">
@@ -152,10 +152,10 @@
             // Affichage des données JSON brutes
             $('#resultat-brut').text(JSON.stringify(resultat, null, "  ")).show();
 
-            // Affichage des données relatives au barême
+            // Affichage des données relatives au barème
             $('#resultat').show();
             var nbPersonnes = 1 + (resultat.nombrePersonnesCharge || 0);
-            if (resultat.declarant2) {
+            if (resultat.declarant2 && resultat.declarant2.nom) {
                 nbPersonnes++;
             }
             $('#nbPersonnes').text(nbPersonnes);
