@@ -3,7 +3,7 @@ const express = require('express');
 const requete = require('./requete');
 
 const server_port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
-const server_ip_address = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+const server_ip_address = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
@@ -25,6 +25,9 @@ app.get('/recherche', function (req, res, next) {
       message: 'Requête incorrecte',
       explaination: 'Les paramètres numeroFiscal et referenceAvis doivent être fournis dans la requête.'
     });
+  } else if (req.query.numeroFiscal === '1234' && req.query.referenceAvis === '5678') {
+    // Données de tests.
+    return res.sendFile(__dirname + '/tests/testData.json');
   } else {
     // Nettoyage des paramètres.
     var numeroFiscal = req.query.numeroFiscal.replace(/ /g, '').substring(0, 13);
@@ -69,12 +72,12 @@ app.get('/recherche', function (req, res, next) {
  */
 app.get('/purge', function (req, res, next) {
   db.run('DELETE FROM avis')
-  .then(function() {
-    res.send('OK');
-  })
-  .catch(function (err) {
-    next(err);
-  });
+    .then(function () {
+      res.send('OK');
+    })
+    .catch(function (err) {
+      next(err);
+    });
 });
 
 /*
