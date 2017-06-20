@@ -108,6 +108,9 @@
                         <th>Eligibilité régions</th>
                         <td id="eligibiliteRegions"></td>
                     </tr>
+                    <tr>
+                        <td colspan="2"><img id="capture"></td>
+                    </tr>
                 </table>
                 <pre id="resultat-brut" style="display: none"></pre>
             </div>
@@ -151,6 +154,9 @@
         function afficherResultat(resultat) {
             // Affichage des données JSON brutes
             $('#resultat-brut').text(JSON.stringify(resultat, null, "  ")).show();
+
+            // Affichage de la capture.
+            $('#capture').attr('src', 'data:image/jpeg;base64,' + resultat.capture);
 
             // Affichage des données relatives au barème
             $('#resultat').show();
