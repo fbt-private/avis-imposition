@@ -10,6 +10,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.17.2",
+    "cookie-parser": "^1.4.3",
     "express": "^4.15.3",
     "phantom": "^4.0.4",
     "sqlite": "^2.8.0",
