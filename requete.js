@@ -74,7 +74,19 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
                                             instance.exit();
                                             done(err, result);
                                         } else {
-                                            // Succès ! On capture la page et on renvoie les données JPEG en base64.
+                                            // Succès !
+
+                                            // On extrait le code postal et la ville du champ adresse.
+                                            if (result.foyerFiscal && result.foyerFiscal.adresse) {
+                                                var cp = result.foyerFiscal.adresse.match(/^(.*)([0-9]{5})(.*)$/);
+                                                if (cp) {
+                                                    result.foyerFiscal.adresse = cp[1].trim();
+                                                    result.foyerFiscal.codePostal = cp[2];
+                                                    result.foyerFiscal.ville = cp[3].trim();
+                                                }
+                                            }
+
+                                            // On capture la page et on renvoie les données JPEG en base64.
                                             page.renderBase64('JPG')
                                                 .then((data) => {
                                                     instance.exit();

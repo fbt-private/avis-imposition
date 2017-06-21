@@ -13,7 +13,9 @@
   },
   "foyerFiscal": {
     "annee": 2016,
-    "adresse": "12 RUE DU CHEMIN 12345 TRIFOUILLIS LES OIES"
+    "adresse": "12 RUE DU CHEMIN",
+    "codePostal": "12345",
+    "ville": "TRIFOUILLIS LES OIES"
   },
   "dateRecouvrement": "31/07/2016",
   "dateEtablissement": "12/07/2016",
