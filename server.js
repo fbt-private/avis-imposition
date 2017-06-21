@@ -1,3 +1,5 @@
+const fs = require('fs');
+const dateFormat = require('dateformat');
 const db = require('sqlite');
 const express = require('express');
 const bodyParser = require('body-parser')
@@ -10,7 +12,7 @@ const server_ip_address = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
-const kizeoFormId = 228400;
+const kizeoFormId = 228400; // TODO mettre en paramètre ?
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -94,14 +96,28 @@ app.get('/recherche', function (req, res, next) {
       message: 'Requête incorrecte',
       explaination: 'Les paramètres numeroFiscal et referenceAvis doivent être fournis dans la requête.'
     });
-  } else if (req.query.numeroFiscal === '1234' && req.query.referenceAvis === '5678') {
-    // Données de tests.
-    return res.sendFile(__dirname + '/tests/testData.json');
-  } else {
-    // Nettoyage des paramètres.
-    var numeroFiscal = req.query.numeroFiscal.replace(/ /g, '').substring(0, 13);
-    var referenceAvis = req.query.referenceAvis.replace(/ /g, '').substring(0, 13);
+  }
 
+  // Nettoyage des paramètres.
+  var numeroFiscal = req.query.numeroFiscal.replace(/ /g, '').substring(0, 13);
+  var referenceAvis = req.query.referenceAvis.replace(/ /g, '').substring(0, 13);
+  if (numeroFiscal === '1234' && referenceAvis === '5678') {
+    // Données de tests.
+    fs.readFile(__dirname + '/tests/testData.json', { encoding: 'utf-8' }, function (err, data) {
+      if (err) {
+        return next(err);
+      }
+      var result = JSON.parse(data);
+
+      // Pousse les données vers KIZEO.
+      pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, result, function (err) {
+        if (err) {
+          return next(err);
+        }
+        res.json(result);
+      });
+    });
+  } else {
     // Détection des doublons.
     selectAvis.get([numeroFiscal, referenceAvis])
       .then(function (row) {
@@ -125,15 +141,75 @@ app.get('/recherche', function (req, res, next) {
             return next(err);
           }
 
-          // Enregistre les références fiscales.
-          insertAvis.run([numeroFiscal, referenceAvis])
-            .then(function () {
-              res.json(result);
-            })
+          // Pousse les données vers KIZEO.
+          pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, result, function (err) {
+            if (err) {
+              return next(err);
+            }
+
+            // Enregistre les références fiscales.
+            insertAvis.run([numeroFiscal, referenceAvis])
+              .then(function () {
+                res.json(result);
+              })
+          });
         });
       });
   }
 });
+
+/**
+ * 
+ * @param {string} token Jeton d'authentification
+ * @param {string} formId Identifiant du formulaire
+ * @param {string} recipientId Identifiant de l'utilisateur
+ * @param {string} numeroFiscal Numéro fiscal
+ * @param {string} referenceAvis Référence de l'avis d'imposition
+ * @param {string} result Objet résultat
+ * @param {*} done Callback
+ */
+
+function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
+  // Génère le nom du fichier capture.
+  var now = new Date();
+  var timestamp = dateFormat(now, "yyyymmddHHMMss");
+  var captureName = 'c32740f' + formId + 'pu' + recipientId + '_' + timestamp;
+
+  var fields = {
+    "numero_fiscal": {
+      "value": numeroFiscal
+    },
+    "reference_de_l_avis": {
+      "value": referenceAvis
+    },
+    "nom": {
+      "value": result.declarant1.nom
+    },
+    "prenom": {
+      "value": result.declarant1.prenoms
+    },
+    "adresse": {
+      "value": result.foyerFiscal.adresse
+    },
+    "code_postal": {
+      "value": result.foyerFiscal.codePostal
+    },
+    "ville": {
+      "value": result.foyerFiscal.ville
+    },
+    "photo3": {
+      "value": captureName
+    }
+  };
+
+  // Envoie la capture d'écran.
+  kizeo.postMedia(token, formId, captureName + '.jpg', result.capture, function(err) {
+    if (err) {
+      return done(err);
+    }
+    kizeo.push(token, formId, recipientId, fields, done);
+  });
+}
 
 /**
  * Purge de la table avis.

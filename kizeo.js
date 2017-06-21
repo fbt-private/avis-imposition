@@ -53,6 +53,21 @@ module.exports = {
         request(options, function (error, response, body) {
             done(error, body);
         });
+    },
 
-    }
+    postMedia: function(token, formId, name, data, done) {
+        var options = {
+            uri: root + 'forms/' + formId + '/medias/' + name,
+            method: 'POST',
+            headers: {
+                'Authorization': token
+            },
+            body: data
+        };
+
+        request(options, function (error, response, body) {
+            done(error, body);
+        });
+    },
+
 }
