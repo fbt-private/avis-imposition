@@ -15,6 +15,7 @@ module.exports = {
             }
         };
 
+        console.log(options.method + ' ' + options.uri);
         request(options, function (error, response, body) {
             done(error, body);
         });
@@ -29,6 +30,7 @@ module.exports = {
             }
         };
 
+        console.log(options.method + ' ' + options.uri);
         request(options, function (error, response, body) {
             if (!error) {
                 body = JSON.parse(body);
@@ -50,6 +52,7 @@ module.exports = {
             }
         };
 
+        console.log(options.method + ' ' + options.uri);
         request(options, function (error, response, body) {
             done(error, body);
         });
@@ -65,6 +68,7 @@ module.exports = {
             body: data
         };
 
+        console.log(options.method + ' ' + options.uri);
         request(options, function (error, response, body) {
             done(error, body);
         });

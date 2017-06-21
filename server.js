@@ -9,6 +9,7 @@ const kizeo = require('./kizeo');
 
 const server_port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 const server_ip_address = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+const data_dir = process.env.OPENSHIFT_DATA_DIR || '.';
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
@@ -25,6 +26,7 @@ var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
  * Formulaire principal.
  */
 app.get('/', function (req, res, next) {
+  console.log('GET /');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
     return res.status(403).redirect('/identification');
   } else {
@@ -36,6 +38,7 @@ app.get('/', function (req, res, next) {
  * Formulaire d'dentification.
  */
 app.get('/identification', function (req, res, next) {
+  console.log('GET /identification');
   return res.sendFile(__dirname + '/public/identification.html');
 });
 
@@ -45,6 +48,7 @@ app.get('/identification', function (req, res, next) {
  * Interroge l'API KIZEO avec les informations fournies, et positionne le cookie 'token' en cas de succès.
  */
 app.post('/identification', function (req, res, next) {
+  console.log('POST /identification');
   if (!req.body.identifiant || !req.body.motDePasse) {
     return res.status(403).redirect('/identification?erreur');
   }
@@ -83,6 +87,7 @@ app.post('/identification', function (req, res, next) {
  * Service web principal.
  */
 app.get('/recherche', function (req, res, next) {
+  console.log('GET /recherche');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
     return req.status(403).send({
       code: 400,
@@ -215,6 +220,7 @@ function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvi
  * Purge de la table avis.
  */
 app.get('/purge', function (req, res, next) {
+  console.log('GET /purge');
   db.run('DELETE FROM avis')
     .then(function () {
       res.send('OK');
@@ -229,7 +235,7 @@ app.get('/purge', function (req, res, next) {
  */
 
 // Ouverture/création DB pour stockage requêtes déjà effectuées.
-db.open('./database.sqlite')
+db.open(data_dir + '/database.sqlite')
   .then(function () {
     // On applique les schémas de base.
     return db.migrate();
