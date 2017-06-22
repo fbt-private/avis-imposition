@@ -180,6 +180,12 @@ function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvi
   var timestamp = dateFormat(now, "yyyymmddHHMMss");
   var captureName = 'c32740f' + formId + 'pu' + recipientId + '_' + timestamp;
 
+  // Nombre de persones dans le ménage.
+  var nbPersonnes = 1 + (result.nombrePersonnesCharge || 0);
+  if (result.declarant2 && result.declarant2.nom) {
+    nbPersonnes++;
+  }
+
   var fields = {
     "numero_fiscal": {
       "value": numeroFiscal
@@ -204,11 +210,14 @@ function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvi
     },
     "photo3": {
       "value": captureName
-    }
+    },
+    "nombre_de_personne_dans_le_me": {
+      "value": nbPersonnes
+    },
   };
 
   // Envoie la capture d'écran.
-  kizeo.postMedia(token, formId, captureName + '.jpg', result.capture, function(err) {
+  kizeo.postMedia(token, formId, captureName + '.jpg', result.capture, function (err) {
     if (err) {
       return done(err);
     }
