@@ -122,6 +122,15 @@ app.get('/recherche', function (req, res, next) {
         res.json(result);
       });
     });
+  } else if (numeroFiscal === '1234' && referenceAvis === '1234') {
+    // Données de tests.
+    fs.readFile(__dirname + '/tests/testData.json', { encoding: 'utf-8' }, function (err, data) {
+      if (err) {
+        return next(err);
+      }
+      var result = JSON.parse(data);
+      res.json(result);
+    });
   } else {
     // Détection des doublons.
     selectAvis.get([numeroFiscal, referenceAvis])

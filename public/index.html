@@ -109,6 +109,9 @@
                         <td id="eligibiliteRegions"></td>
                     </tr>
                     <tr>
+                        <td><a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a></td>
+                    </tr>
+                    <tr>
                         <td colspan="2"><img id="capture"></td>
                     </tr>
                 </table>
@@ -158,6 +161,13 @@
             // Affichage de la capture.
             $('#capture').attr('src', 'data:image/jpeg;base64,' + resultat.capture);
 
+            // Bouton de sauvegarde.
+            var nomFichier = 'avis_' + $('#numeroFiscal').val() + '_' + $('#referenceAvis').val() + '.jpg';
+            $('#sauve-capture').attr({
+                'href': $('#capture').attr('src'),
+                'download': nomFichier
+            });
+
             // Affichage des données relatives au barème
             $('#resultat').show();
             var nbPersonnes = 1 + (resultat.nombrePersonnesCharge || 0);
@@ -170,7 +180,7 @@
             // Eligibilité
             var baremeIdf = [
                 5860,  // personne supplémentaire
-                19803, // 0 personnes
+                19803, // ! personne
                 29066, // 2 personnes
                 34906, // 3 personnes
                 40758, // 4 personnes
@@ -178,7 +188,7 @@
             ];
             var baremeRegions = [
                 4241,  // personne supplémentaire
-                14308, // 0 personnes
+                14308, // ! personne
                 20925, // 2 personnes
                 25166, // 3 personnes
                 29400, // 4 personnes
