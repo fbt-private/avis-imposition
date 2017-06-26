@@ -11,6 +11,8 @@ const server_port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 808
 const server_ip_address = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 const data_dir = process.env.OPENSHIFT_DATA_DIR || '.';
 
+const version = '1';
+
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
 const kizeoFormId = 228400; // TODO mettre en paramètre ?
@@ -27,7 +29,7 @@ var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
  */
 app.get('/', function (req, res, next) {
   console.log('GET /');
-  if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
+  if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId || req.cookies.version != version) {
     return res.status(403).redirect('/identification');
   } else {
     return res.sendFile(__dirname + '/public/index.html');
@@ -73,8 +75,9 @@ app.post('/identification', function (req, res, next) {
         if (user.login.toLowerCase() == login.toLowerCase()) {
           // Trouvé !
           res
-            .cookie('kizeo_token', token)
+            .cookie('kizeo_token', token, {httpOnly: true, maxAge: 1000 * 60 * 60 * 12 /* 12h */})
             .cookie('kizeo_userId', user.id)
+            .cookie('version', version)
             .redirect('/');
         }
       }
