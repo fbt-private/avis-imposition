@@ -1,6 +1,8 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vérification d'avis d'imposition</title>
 
     <!-- jQuery -->
@@ -46,7 +48,7 @@
                 <h3 class="panel-title">Barème</h3>
             </div>
             <div class="panel-body">
-                <table class="table">
+                <div class="table-responsive"><table class="table">
                     <tr>
                         <th>Nombre de personnes composant le ménage</th>
                         <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
@@ -82,7 +84,7 @@
                         <td>+ 5 860</td>
                         <td>+ 4 241</td>
                     </tr>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -91,30 +93,30 @@
                 <h3 class="panel-title">Résultat</h3>
             </div>
             <div class="panel-body">
-                <table id="resultat" class="table" style="display: none">
-                    <tr>
-                        <th width="33%">Nombre de personnes</th>
-                        <td id="nbPersonnes"></td>
-                    </tr>
-                    <tr>
-                        <th>Revenu fiscal de référence</th>
-                        <td id="revenuFiscalReference"></td>
-                    </tr>
-                    <tr>
-                        <th>Eligibilité Île-de-France</th>
-                        <td id="eligibiliteIdf"></td>
-                    </tr>
-                    <tr>
-                        <th>Eligibilité régions</th>
-                        <td id="eligibiliteRegions"></td>
-                    </tr>
-                    <tr>
-                        <td><a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><img id="capture"></td>
-                    </tr>
-                </table>
+                <div class="form-horizontal" id="resultat" style="display: none">
+                    <div class="form-group">
+                        <label class="col-sm-2">Nombre de personnes</label>
+                        <div class="col-sm-3" id="nbPersonnes"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Revenu fiscal de référence</label>
+                        <div class="col-sm-3" id="revenuFiscalReference"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Eligibilité Île-de-France</label>
+                        <div class="col-sm-3" id="eligibiliteIdf"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Eligibilité régions</label>
+                        <div class="col-sm-3" id="eligibiliteRegions"></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-3"><a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-12"><img id="capture" class="img-responsive"></div>
+                    </div>
+                </div>
                 <pre id="resultat-brut" style="display: none"></pre>
             </div>
         </div>
@@ -203,8 +205,8 @@
             }
             var eligibiliteIdf = (resultat.revenuFiscalReference <= plafondIdf);
             $('#eligibiliteIdf').text(eligibiliteIdf ? 'Oui' : 'Non')
-                .toggleClass('success', eligibiliteIdf)
-                .toggleClass('danger', !eligibiliteIdf);
+                .toggleClass('bg-success', eligibiliteIdf)
+                .toggleClass('bg-danger', !eligibiliteIdf);
 
             var plafondRegions;
             if (nbPersonnes < baremeRegions.length) {
@@ -214,8 +216,8 @@
             }
             var eligibiliteRegions = (resultat.revenuFiscalReference <= plafondRegions);
             $('#eligibiliteRegions').text(eligibiliteRegions ? 'Oui' : 'Non')
-                .toggleClass('success', eligibiliteRegions)
-                .toggleClass('danger', !eligibiliteRegions);
+                .toggleClass('bg-success', eligibiliteRegions)
+                .toggleClass('bg-danger', !eligibiliteRegions);
         }
         $('#formulaire-recherche').submit(function () {
             activerFormulaire(false);
