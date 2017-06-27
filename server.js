@@ -74,7 +74,7 @@ app.post('/identification', function (req, res, next) {
       for (var user of result.data.users) {
         if (user.login.toLowerCase() == login.toLowerCase()) {
           // Trouvé !
-          res
+          return res
             .cookie('kizeo_token', token, {httpOnly: true, maxAge: 1000 * 60 * 60 * 12 /* 12h */})
             .cookie('kizeo_userId', user.id)
             .cookie('version', version)
