@@ -48,43 +48,45 @@
                 <h3 class="panel-title">Barème</h3>
             </div>
             <div class="panel-body">
-                <div class="table-responsive"><table class="table">
-                    <tr>
-                        <th>Nombre de personnes composant le ménage</th>
-                        <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
-                        <th>Plafonds de revenus du ménage pour les autres régions (€)</th>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>19 803</td>
-                        <td>14 308</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>29 066</td>
-                        <td>20 925</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>34 906</td>
-                        <td>25 166</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>40 758</td>
-                        <td>29 400</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>46 630</td>
-                        <td>33 652</td>
-                    </tr>
-                    <tr>
-                        <td>Par personne supplémentaire</td>
-                        <td>+ 5 860</td>
-                        <td>+ 4 241</td>
-                    </tr>
-                </table></div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <th>Nombre de personnes composant le ménage</th>
+                            <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
+                            <th>Plafonds de revenus du ménage pour les autres régions (€)</th>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>19 803</td>
+                            <td>14 308</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>29 066</td>
+                            <td>20 925</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>34 906</td>
+                            <td>25 166</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>40 758</td>
+                            <td>29 400</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>46 630</td>
+                            <td>33 652</td>
+                        </tr>
+                        <tr>
+                            <td>Par personne supplémentaire</td>
+                            <td>+ 5 860</td>
+                            <td>+ 4 241</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -111,7 +113,11 @@
                         <div class="col-sm-3" id="eligibiliteRegions"></div>
                     </div>
                     <div class="form-group">
-                        <div class="col-sm-3"><a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a></div>
+                        <div class="col-sm-12">
+                            <a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a>
+                            <button id="envoyer" class="btn btn-default" data-processing-text="<i class='fa fa-circle-o-notch fa-spin'></i> Envoi en cours...">Envoyer le formulaire</button>
+                            <span id="resultat-envoi"></span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <div class="col-sm-12"><img id="capture" class="img-responsive"></div>
@@ -144,8 +150,10 @@
     <!-- /.modal -->
 
     <script>
+        var dernierResultat;
+
         function activerFormulaire(etat) {
-            $('#formulaire-recherche').find('input, button').prop('disabled', !etat);
+            $('input, button').prop('disabled', !etat);
         }
         function erreur(titre, texte) {
             $("#titre-message").text(titre);
@@ -223,15 +231,22 @@
             activerFormulaire(false);
             effacerResultat();
             $('#rechercher').button('processing');
+            var numeroFiscal = $('#numeroFiscal').val();
+            var referenceAvis = $('#referenceAvis').val();
             $.ajax({
                 url: './recherche',
                 data: {
-                    numeroFiscal: $('#numeroFiscal').val(),
-                    referenceAvis: $('#referenceAvis').val(),
+                    numeroFiscal: numeroFiscal,
+                    referenceAvis: referenceAvis,
                 },
                 dataType: 'json',
             })
                 .done(function (data) {
+                    dernierResultat = {
+                        numeroFiscal: numeroFiscal,
+                        referenceAvis: referenceAvis,
+                        resultat: data,
+                    };
                     afficherResultat(data);
                 })
                 .fail(function (err) {
@@ -246,7 +261,7 @@
 
         $('#purger').click(function () {
             activerFormulaire(false);
-            $('#resultat-purge').text('Purge en cours...');
+            $('#resultat-purge').text('Purge en cours...').show();
             $.ajax({
                 url: './purge',
             })
@@ -263,6 +278,35 @@
                     setTimeout(function () {
                         $('#resultat-purge').hide();
                     }, 1000);
+                });
+            return false;
+        });
+
+        $('#envoyer').click(function () {
+            activerFormulaire(false);
+            $('#envoyer').button('processing');
+            $.ajax({
+                url: './envoyer',
+                method: 'POST',
+                data: JSON.stringify(dernierResultat),
+                contentType: "application/json",
+            })
+                .done(function (data) {
+                    $('#resultat-envoi').text('Envoi effectué !').show();
+                    setTimeout(function () {
+                        $('#resultat-envoi').hide();
+                    }, 1000);
+                })
+                .fail(function (err) {
+                    if (err.responseJSON) {
+                        erreur(err.responseJSON.message, err.responseJSON.explaination);
+                    } else {
+                        erreur('Erreur', err.responseText);
+                    }
+                })
+                .always(function () {
+                    activerFormulaire(true);
+                    $('#envoyer').button('reset');
                 });
             return false;
         });

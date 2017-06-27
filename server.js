@@ -19,6 +19,7 @@ const kizeoFormId = 228400; // TODO mettre en paramètre ?
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ type: 'application/json' }));
 app.use(cookieParser());
 
 var selectAvis; // SQL Statement pour la recherche d'avis dans la table.
@@ -75,7 +76,7 @@ app.post('/identification', function (req, res, next) {
         if (user.login.toLowerCase() == login.toLowerCase()) {
           // Trouvé !
           return res
-            .cookie('kizeo_token', token, {httpOnly: true, maxAge: 1000 * 60 * 60 * 12 /* 12h */})
+            .cookie('kizeo_token', token, { httpOnly: true, maxAge: 1000 * 60 * 60 * 12 /* 12h */ })
             .cookie('kizeo_userId', user.id)
             .cookie('version', version)
             .redirect('/');
@@ -92,14 +93,14 @@ app.post('/identification', function (req, res, next) {
 app.get('/recherche', function (req, res, next) {
   console.log('GET /recherche');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
-    return req.status(403).send({
+    return res.status(403).json({
       code: 400,
       message: 'Authentification requise',
       explaination: 'Cette requête nécessite un jeton d\'authentification.'
     });
   } else if (!req.query.numeroFiscal || !req.query.referenceAvis) {
     // Paramètres manquants.
-    return res.status(400).send({
+    return res.status(400).json({
       code: 400,
       message: 'Requête incorrecte',
       explaination: 'Les paramètres numeroFiscal et referenceAvis doivent être fournis dans la requête.'
@@ -139,7 +140,7 @@ app.get('/recherche', function (req, res, next) {
     selectAvis.get([numeroFiscal, referenceAvis])
       .then(function (row) {
         if (row) {
-          return res.status(400).send({
+          return res.status(400).json({
             code: 400,
             message: 'Requête dupliquée',
             explaination: 'Les références fiscales ont déjà été vérifiées.'
@@ -149,7 +150,7 @@ app.get('/recherche', function (req, res, next) {
         // Exécution de la requête.
         requete(formURL, numeroFiscal, referenceAvis, function (err, result) {
           if (err && err.message === 'Invalid credentials') {
-            return res.status(404).send({
+            return res.status(404).json({
               code: 404,
               message: 'Résultat non trouvé',
               explaination: 'Les paramètres fournis sont incorrects ou ne correspondent pas à un avis'
@@ -158,21 +159,45 @@ app.get('/recherche', function (req, res, next) {
             return next(err);
           }
 
-          // Pousse les données vers KIZEO.
-          pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, result, function (err) {
-            if (err) {
-              return next(err);
-            }
-
-            // Enregistre les références fiscales.
-            insertAvis.run([numeroFiscal, referenceAvis])
-              .then(function () {
-                res.json(result);
-              })
-          });
+          // On renvoie les résultats.
+          return res.json(result);
         });
       });
   }
+});
+
+/**
+ * Service d'envoi de donn2es au formulaire KIZEO.
+ */
+app.post('/envoyer', function (req, res, next) {
+  console.log('POST /envoyer');
+  if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
+    return res.status(403).json({
+      code: 400,
+      message: 'Authentification requise',
+      explaination: 'Cette requête nécessite un jeton d\'authentification.'
+    });
+  }
+
+  // Pousse les données vers KIZEO.
+  var numeroFiscal = req.body.numeroFiscal;
+  var referenceAvis = req.body.referenceAvis;
+  var resultat = req.body.resultat;
+  pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, resultat, function (err) {
+    if (err) {
+      return res.status(500).json({
+        code: 500,
+        message: 'Erreur KIZEO',
+        explaination: err.message
+      });
+    }
+
+    // Enregistre les références fiscales.
+    insertAvis.run([numeroFiscal, referenceAvis])
+      .then(function () {
+        return res.send('OK');
+      })
+  });
 });
 
 /**
