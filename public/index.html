@@ -39,7 +39,7 @@
                 <div class="col-sm-3"><input type="text" class="form-control" id="referenceAvis" maxlength="13" placeholder="1234567890ABC"></div>
             </div>
             <button id="rechercher" type="submit" class="btn btn-default" data-processing-text="<i class='fa fa-circle-o-notch fa-spin'></i> Recherche en cours...">Rechercher</button>
-            <button id="purger" class="btn btn-default">Purger</button>
+            <!-- <button id="purger" class="btn btn-default">Purger</button> -->
             <span id="resultat-purge"></span>
         </form>
 
@@ -240,6 +240,7 @@
                     referenceAvis: referenceAvis,
                 },
                 dataType: 'json',
+                timeout: 30000,
             })
                 .done(function (data) {
                     dernierResultat = {
@@ -249,8 +250,12 @@
                     };
                     afficherResultat(data);
                 })
-                .fail(function (err) {
-                    erreur(err.responseJSON.message, err.responseJSON.explaination);
+                .fail(function (xhr, status, error) {
+                    if (xhr.responseJSON) {
+                        erreur(xhr.responseJSON.message, xhr.responseJSON.explaination);
+                    } else {
+                        erreur(status, error);
+                    }
                 })
                 .always(function () {
                     activerFormulaire(true);
