@@ -15,7 +15,7 @@ const version = '1';
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
-const kizeoFormId = 228400; // TODO mettre en paramètre ?
+const kizeoFormId = process.env.KIZEO_FORM_ID || '228400';
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
