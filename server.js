@@ -31,6 +31,7 @@ appV2.locals.testData = __dirname + '/tests/testData.json';
 
 // Application racine.
 const app = express();
+app.enable('strict routing');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({ type: 'application/json' }));
 app.use(cookieParser());
@@ -46,6 +47,10 @@ var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
  * Formulaire principal.
  */
 function getRoot(req, res, next) {
+  if (!req.originalUrl.endsWith('/')) {
+    // Nécessaire pour les URLs relatives dans les pages.
+    return res.redirect(301, req.originalUrl + '/');
+  }
   console.log('GET ' + req.baseUrl + '/');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId || req.cookies.version != version) {
     return res.status(403).redirect(req.baseUrl + '/identification');
@@ -239,7 +244,7 @@ appV2.post('/envoyer', postEnvoyer);
  * @param {*} done Callback
  */
 
-appV1.locals.pousseFormulaire = function(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
+appV1.locals.pousseFormulaire = function (token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
   // Génère le nom du fichier capture.
   var now = new Date();
   var timestamp = dateFormat(now, "yyyymmddHHMMss");
@@ -302,7 +307,7 @@ appV1.locals.pousseFormulaire = function(token, formId, recipientId, numeroFisca
  * @param {*} done Callback
  */
 
-appV2.locals.pousseFormulaire = function(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
+appV2.locals.pousseFormulaire = function (token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
   // Génère le nom du fichier capture.
   var now = new Date();
   var timestamp = dateFormat(now, "yyyymmddHHMMss");
@@ -314,7 +319,9 @@ appV2.locals.pousseFormulaire = function(token, formId, recipientId, numeroFisca
     nbPersonnes++;
   }
 
-  // TODO
+  // Situation fiscale.
+  var situationFiscale = eligibilite(nbPersonnes, result.revenuFiscalReference, result.foyerFiscal.codePostal);
+
   var fields = {
     "numero_fiscal": {
       "value": numeroFiscal
@@ -337,11 +344,17 @@ appV2.locals.pousseFormulaire = function(token, formId, recipientId, numeroFisca
     "ville": {
       "value": result.foyerFiscal.ville
     },
-    "photo3": {
+    "capture_d_ecran_recherche_sur": {
       "value": captureName
     },
-    "nombre_de_personne_dans_le_me": {
+    "nombre_de_personne_composant_": {
       "value": nbPersonnes
+    },
+    "revenu_fiscal_de_reference": {
+      "value": result.revenuFiscalReference
+    },
+    "situation_fiscale": {
+      "value": situationFiscale
     },
   };
 
@@ -352,6 +365,95 @@ appV2.locals.pousseFormulaire = function(token, formId, recipientId, numeroFisca
     }
     kizeo.push(token, formId, recipientId, fields, done);
   });
+}
+
+/**
+ * Calcul de l'égibilité.
+ * 
+ * @param {number} nbPersonnes Nombre de personnes du ménage
+ * @param {number} revenuFiscalReference Revenu fiscal de référence
+ * @param {string} codePostal Code postal
+ * 
+ * @return {string} Situation fiscale : 'Précaire', 'Grand Précaire', 'Classique'
+ */
+function eligibilite(nbPersonnes, revenuFiscalReference, codePostal) {
+  // Barèmes.
+  var baremeIdfPrecaire = [
+    7136,  // personne supplémentaire
+    24107, // 1 personne
+    35382, // 2 personnes
+    42495, // 3 personnes
+    49620, // 4 personnes
+    56765, // 5 personnes      
+  ];
+  var baremeRegionsPrecaire = [
+    5434,  // personne supplémentaire
+    18342, // 1 personne
+    26826, // 2 personnes
+    32260, // 3 personnes
+    37690, // 4 personnes
+    43141, // 5 personnes
+  ];
+  var baremeIdfGrandPrecaire = [
+    5860,  // personne supplémentaire
+    19803, // 1 personne
+    29066, // 2 personnes
+    34906, // 3 personnes
+    40758, // 4 personnes
+    46630, // 5 personnes      
+  ];
+  var baremeRegionsGrandPrecaire = [
+    4241,  // personne supplémentaire
+    14308, // 1 personne
+    20925, // 2 personnes
+    25166, // 3 personnes
+    29400, // 4 personnes
+    33652, // 5 personnes
+  ];
+
+  // Ile de France/Régions.
+  var idf = ((['75', '77', '78', '91', '92', '93', '94', '95']).indexOf(codePostal.substring(0, 2)) >= 0);
+  if (idf) {
+    var plafondIdfPrecaire;
+    if (nbPersonnes < baremeIdfPrecaire.length) {
+      plafondIdfPrecaire = baremeIdfPrecaire[nbPersonnes]
+    } else {
+      plafondIdfPrecaire = baremeIdfPrecaire[baremeIdfGrandPrecaire.length - 1] + baremeIdfPrecaire[0] * (nbPersonnes - baremeIdfPrecaire.length + 1);
+    }
+    var plafondIdfGrandPrecaire;
+    if (nbPersonnes < baremeIdfGrandPrecaire.length) {
+      plafondIdfGrandPrecaire = baremeIdfGrandPrecaire[nbPersonnes]
+    } else {
+      plafondIdfGrandPrecaire = baremeIdfGrandPrecaire[baremeIdfGrandPrecaire.length - 1] + baremeIdfGrandPrecaire[0] * (nbPersonnes - baremeIdfGrandPrecaire.length + 1);
+    }
+    var eligibiliteIdfPrecaire = (revenuFiscalReference <= plafondIdfPrecaire);
+    var eligibiliteIdfGrandPrecaire = (revenuFiscalReference <= plafondIdfGrandPrecaire);
+    return (
+      eligibiliteIdfGrandPrecaire ? 'Grand Précaire' :
+      eligibiliteIdfPrecaire ? 'Précaire' :
+      'Classique'
+    );
+  } else {
+    var plafondRegionsPrecaire;
+    if (nbPersonnes < baremeRegionsPrecaire.length) {
+      plafondRegionsPrecaire = baremeRegionsPrecaire[nbPersonnes]
+    } else {
+      plafondRegionsPrecaire = baremeRegionsPrecaire[baremeRegionsGrandPrecaire.length - 1] + baremeRegionsPrecaire[0] * (nbPersonnes - baremeRegionsPrecaire.length + 1);
+    }
+    var plafondRegionsGrandPrecaire;
+    if (nbPersonnes < baremeRegionsGrandPrecaire.length) {
+      plafondRegionsGrandPrecaire = baremeRegionsGrandPrecaire[nbPersonnes]
+    } else {
+      plafondRegionsGrandPrecaire = baremeRegionsGrandPrecaire[baremeRegionsGrandPrecaire.length - 1] + baremeRegionsGrandPrecaire[0] * (nbPersonnes - baremeRegionsGrandPrecaire.length + 1);
+    }
+    var eligibiliteRegionsPrecaire = (revenuFiscalReference <= plafondRegionsPrecaire);
+    var eligibiliteRegionsGrandPrecaire = (revenuFiscalReference <= plafondRegionsGrandPrecaire);
+    return (
+      eligibiliteRegionsGrandPrecaire ? 'Grand Précaire' :
+      eligibiliteRegionsPrecaire ? 'Précaire' :
+      'Classique'
+    );
+  }
 }
 
 /**

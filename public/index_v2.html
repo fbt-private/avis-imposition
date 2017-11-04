@@ -276,12 +276,10 @@
             }
             var eligibiliteIdfPrecaire = (resultat.revenuFiscalReference <= plafondIdfPrecaire);
             var eligibiliteIdfGrandPrecaire = (resultat.revenuFiscalReference <= plafondIdfGrandPrecaire);
-            $('#eligibiliteIdf').text(
-                eligibiliteIdfGrandPrecaire ? 'Grand précaire' :
+            var eligibiliteIdf = 
+                eligibiliteIdfGrandPrecaire ? 'Grand Précaire' :
                 eligibiliteIdfPrecaire ? 'Précaire' :
-                'Non')
-                .toggleClass('bg-success', (eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire))
-                .toggleClass('bg-danger', !(eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire));
+                'Classique';
 
             var plafondRegionsPrecaire;
             if (nbPersonnes < baremeRegionsPrecaire.length) {
@@ -297,10 +295,15 @@
             }
             var eligibiliteRegionsPrecaire = (resultat.revenuFiscalReference <= plafondRegionsPrecaire);
             var eligibiliteRegionsGrandPrecaire = (resultat.revenuFiscalReference <= plafondRegionsGrandPrecaire);
-            $('#eligibiliteRegions').text(
-                eligibiliteRegionsGrandPrecaire ? 'Grand précaire' :
+            var eligibiliteRegions = 
+                eligibiliteRegionsGrandPrecaire ? 'Grand Précaire' :
                 eligibiliteRegionsPrecaire ? 'Précaire' :
-                'Non')
+                'Classique';
+
+            $('#eligibiliteIdf').text(eligibiliteIdf)
+                .toggleClass('bg-success', (eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire))
+                .toggleClass('bg-danger', !(eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire));
+            $('#eligibiliteRegions').text(eligibiliteRegions)
                 .toggleClass('bg-success', (eligibiliteRegionsPrecaire || eligibiliteRegionsGrandPrecaire))
                 .toggleClass('bg-danger', !(eligibiliteRegionsPrecaire || eligibiliteRegionsGrandPrecaire));
         }
