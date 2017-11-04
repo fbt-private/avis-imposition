@@ -15,13 +15,29 @@ const version = '1';
 
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
-const kizeoFormId = process.env.KIZEO_FORM_ID || '228400';
-const kizeoCompany = 'CEECON';
+// Version 1 de l'application.
+const appV1 = express();
+appV1.locals.kizeoFormId = process.env.KIZEO_FORM_ID || '228400';
+appV1.locals.kizeoCompany = process.env.KIZEO_COMPANY || 'CEECON';
+appV1.locals.indexFile = __dirname + '/public/index.html';
+appV1.locals.testData = __dirname + '/tests/testData.json';
 
+// Version 2 de l'application
+const appV2 = express();
+appV2.locals.kizeoFormId = process.env.KIZEO_FORM_ID_V2 || '262802';
+appV2.locals.kizeoCompany = process.env.KIZEO_COMPANY_V2 || 'CEECON1';
+appV2.locals.indexFile = __dirname + '/public/index_v2.html';
+appV2.locals.testData = __dirname + '/tests/testData.json';
+
+// Application racine.
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({ type: 'application/json' }));
 app.use(cookieParser());
+
+// Montage des versions 1 et 2.
+app.use('/', appV1);
+app.use('/v2', appV2);
 
 var selectAvis; // SQL Statement pour la recherche d'avis dans la table.
 var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
@@ -29,41 +45,45 @@ var insertAvis; // SQL Statement pour l'insertion d'avis dans la table.
 /**
  * Formulaire principal.
  */
-app.get('/', function (req, res, next) {
-  console.log('GET /');
+function getRoot(req, res, next) {
+  console.log('GET ' + req.baseUrl + '/');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId || req.cookies.version != version) {
-    return res.status(403).redirect('/identification');
+    return res.status(403).redirect(req.baseUrl + '/identification');
   } else {
-    return res.sendFile(__dirname + '/public/index.html');
+    return res.sendFile(req.app.locals.indexFile);
   }
-});
+}
+appV1.get('/', getRoot);
+appV2.get('/', getRoot);
 
 /**
  * Formulaire d'dentification.
  */
-app.get('/identification', function (req, res, next) {
-  console.log('GET /identification');
+function getIdentification(req, res, next) {
+  console.log('GET ' + req.baseUrl + '/identification');
   return res.sendFile(__dirname + '/public/identification.html');
-});
+}
+appV1.get('/identification', getIdentification);
+appV2.get('/identification', getIdentification);
 
 /**
- * Service d'i'dentification.
+ * Service d'identification.
  * 
  * Interroge l'API KIZEO avec les informations fournies, et positionne le cookie 'token' en cas de succès.
  */
-app.post('/identification', function (req, res, next) {
-  console.log('POST /identification');
+function postIdentification(req, res, next) {
+  console.log('POST ' + req.baseUrl + '/identification');
   if (!req.body.identifiant || !req.body.motDePasse) {
-    return res.status(403).redirect('/identification?erreur');
+    return res.status(403).redirect(req.baseUrl + '/identification?erreur');
   }
 
   // Authentification via KIZEO.
   var login = req.body.identifiant;
   var password = req.body.motDePasse;
-  kizeo.login(kizeoCompany, login, password, function (err, result) {
+  kizeo.login(req.app.locals.kizeoCompany, login, password, function (err, result) {
     console.log(err, result);
     if (err || !result || !result.data || !result.data.token) {
-      return res.status(403).redirect('/identification?erreur');
+      return res.status(403).redirect(req.baseUrl + '/identification?erreur');
     }
 
     // Récupère l'identifiant utilisateur pour la suite.
@@ -71,7 +91,7 @@ app.post('/identification', function (req, res, next) {
     console.log(token);
     kizeo.users(token, function (err, result) {
       if (err || !result || !result.data || !result.data.users) {
-        return res.status(403).redirect('/identification?erreur');
+        return res.status(403).redirect(req.baseUrl + '/identification?erreur');
       }
       for (var user of result.data.users) {
         if (user.login.toLowerCase() == login.toLowerCase()) {
@@ -80,19 +100,21 @@ app.post('/identification', function (req, res, next) {
             .cookie('kizeo_token', token, { httpOnly: true, maxAge: 1000 * 60 * 60 * 12 /* 12h */ })
             .cookie('kizeo_userId', user.id)
             .cookie('version', version)
-            .redirect('/');
+            .redirect(req.baseUrl + '/');
         }
       }
-      return res.status(403).redirect('/identification?erreur');
+      return res.status(403).redirect(req.baseUrl + '/identification?erreur');
     });
   });
-});
+}
+appV1.post('/identification', postIdentification);
+appV2.post('/identification', postIdentification);
 
 /**
  * Service web principal.
  */
-app.get('/recherche', function (req, res, next) {
-  console.log('GET /recherche');
+function getRecherche(req, res, next) {
+  console.log('GET ' + req.baseUrl + '/recherche');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
     return res.status(403).json({
       code: 400,
@@ -113,14 +135,14 @@ app.get('/recherche', function (req, res, next) {
   var referenceAvis = req.query.referenceAvis.replace(/ /g, '').substring(0, 13);
   if (numeroFiscal === '1234' && referenceAvis === '5678') {
     // Données de tests.
-    fs.readFile(__dirname + '/tests/testData.json', { encoding: 'utf-8' }, function (err, data) {
+    fs.readFile(req.app.locals.testData, { encoding: 'utf-8' }, function (err, data) {
       if (err) {
         return next(err);
       }
       var result = JSON.parse(data);
 
       // Pousse les données vers KIZEO.
-      pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, result, function (err) {
+      req.app.locals.pousseFormulaire(req.cookies.kizeo_token, req.app.locals.kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, result, function (err) {
         if (err) {
           return next(err);
         }
@@ -129,7 +151,7 @@ app.get('/recherche', function (req, res, next) {
     });
   } else if (numeroFiscal === '1234' && referenceAvis === '1234') {
     // Données de tests.
-    fs.readFile(__dirname + '/tests/testData.json', { encoding: 'utf-8' }, function (err, data) {
+    fs.readFile(req.app.locals.testData, { encoding: 'utf-8' }, function (err, data) {
       if (err) {
         return next(err);
       }
@@ -165,12 +187,14 @@ app.get('/recherche', function (req, res, next) {
         });
       });
   }
-});
+}
+appV1.get('/recherche', getRecherche);
+appV2.get('/recherche', getRecherche);
 
 /**
  * Service d'envoi de données au formulaire KIZEO.
  */
-app.post('/envoyer', function (req, res, next) {
+function postEnvoyer(req, res, next) {
   console.log('POST /envoyer');
   if (!req.cookies.kizeo_token || !req.cookies.kizeo_userId) {
     return res.status(403).json({
@@ -184,7 +208,7 @@ app.post('/envoyer', function (req, res, next) {
   var numeroFiscal = req.body.numeroFiscal;
   var referenceAvis = req.body.referenceAvis;
   var resultat = req.body.resultat;
-  pousseFormulaire(req.cookies.kizeo_token, kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, resultat, function (err) {
+  req.app.locals.pousseFormulaire(req.cookies.kizeo_token, req.app.locals.kizeoFormId, req.cookies.kizeo_userId, numeroFiscal, referenceAvis, resultat, function (err) {
     if (err) {
       return res.status(500).json({
         code: 500,
@@ -199,9 +223,12 @@ app.post('/envoyer', function (req, res, next) {
         return res.send('OK');
       })
   });
-});
+}
+appV1.post('/envoyer', postEnvoyer);
+appV2.post('/envoyer', postEnvoyer);
 
 /**
+ * Pousse les données vers le formulaire KIZEO de l'application V1.
  * 
  * @param {string} token Jeton d'authentification
  * @param {string} formId Identifiant du formulaire
@@ -212,7 +239,7 @@ app.post('/envoyer', function (req, res, next) {
  * @param {*} done Callback
  */
 
-function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
+appV1.locals.pousseFormulaire = function(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
   // Génère le nom du fichier capture.
   var now = new Date();
   var timestamp = dateFormat(now, "yyyymmddHHMMss");
@@ -224,6 +251,70 @@ function pousseFormulaire(token, formId, recipientId, numeroFiscal, referenceAvi
     nbPersonnes++;
   }
 
+  var fields = {
+    "numero_fiscal": {
+      "value": numeroFiscal
+    },
+    "reference_de_l_avis": {
+      "value": referenceAvis
+    },
+    "nom": {
+      "value": result.declarant1.nom
+    },
+    "prenom": {
+      "value": result.declarant1.prenoms
+    },
+    "adresse": {
+      "value": result.foyerFiscal.adresse
+    },
+    "code_postal": {
+      "value": result.foyerFiscal.codePostal
+    },
+    "ville": {
+      "value": result.foyerFiscal.ville
+    },
+    "photo3": {
+      "value": captureName
+    },
+    "nombre_de_personne_dans_le_me": {
+      "value": nbPersonnes
+    },
+  };
+
+  // Envoie la capture d'écran.
+  kizeo.postMedia(token, formId, captureName + '.jpg', result.capture, function (err) {
+    if (err) {
+      return done(err);
+    }
+    kizeo.push(token, formId, recipientId, fields, done);
+  });
+}
+
+/**
+ * Pousse les données vers le formulaire KIZEO de l'application V2.
+ * 
+ * @param {string} token Jeton d'authentification
+ * @param {string} formId Identifiant du formulaire
+ * @param {string} recipientId Identifiant de l'utilisateur
+ * @param {string} numeroFiscal Numéro fiscal
+ * @param {string} referenceAvis Référence de l'avis d'imposition
+ * @param {string} result Objet résultat
+ * @param {*} done Callback
+ */
+
+appV2.locals.pousseFormulaire = function(token, formId, recipientId, numeroFiscal, referenceAvis, result, done) {
+  // Génère le nom du fichier capture.
+  var now = new Date();
+  var timestamp = dateFormat(now, "yyyymmddHHMMss");
+  var captureName = 'c32740f' + formId + 'pu' + recipientId + '_' + timestamp;
+
+  // Nombre de persones dans le ménage.
+  var nbPersonnes = 1 + (result.nombrePersonnesCharge || 0);
+  if (result.declarant2 && result.declarant2.nom) {
+    nbPersonnes++;
+  }
+
+  // TODO
   var fields = {
     "numero_fiscal": {
       "value": numeroFiscal

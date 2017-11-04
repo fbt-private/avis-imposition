@@ -1,0 +1,400 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vérification d'avis d'imposition</title>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+
+    <!-- Font-Awesome -->
+    <script src="https://use.fontawesome.com/713c9818e4.js"></script>
+
+    <!-- Bootstrap 3.3.7 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+        crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="page-header">
+            <h1>Vérification d'avis d'imposition</h1>
+        </div>
+
+        <form id="formulaire-recherche" class="form-horizontal" action="#">
+            <div class="form-group">
+                <label for="numeroFiscal" class="col-sm-2">Numéro fiscal</label>
+                <div class="col-sm-3"><input type="text" class="form-control" id="numeroFiscal" maxlength="13" placeholder="1234567890123"></div>
+            </div>
+            <div class="form-group">
+                <label for="referenceAvis" class="col-sm-2">Référence avis</label>
+                <div class="col-sm-3"><input type="text" class="form-control" id="referenceAvis" maxlength="13" placeholder="1234567890ABC"></div>
+            </div>
+            <button id="rechercher" type="submit" class="btn btn-default" data-processing-text="<i class='fa fa-circle-o-notch fa-spin'></i> Recherche en cours...">Rechercher</button>
+            <!-- <button id="purger" class="btn btn-default">Purger</button> -->
+            <span id="resultat-purge"></span>
+        </form>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Barème</h3>
+            </div>
+            <div class="panel-body">
+                <h4>Client précaire</h4>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <th>Nombre de personnes composant le ménage</th>
+                            <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
+                            <th>Plafonds de revenus du ménage pour les autres régions (€)</th>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>24 107</td>
+                            <td>18 342</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>35 382</td>
+                            <td>26 826</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>42 495</td>
+                            <td>32 260</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>49 620</td>
+                            <td>37 690</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>56 765</td>
+                            <td>43 141</td>
+                        </tr>
+                        <tr>
+                            <td>Par personne supplémentaire</td>
+                            <td>+ 7 136</td>
+                            <td>+ 5 434</td>
+                        </tr>
+                    </table>
+                </div>
+                <h4>Client grand précaire</h4>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <th>Nombre de personnes composant le ménage</th>
+                            <th>Plafonds de revenus du ménages en Île-de-France (€)</th>
+                            <th>Plafonds de revenus du ménage pour les autres régions (€)</th>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>19 803</td>
+                            <td>14 308</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>29 066</td>
+                            <td>20 925</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>34 906</td>
+                            <td>25 166</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>40 758</td>
+                            <td>29 400</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>46 630</td>
+                            <td>33 652</td>
+                        </tr>
+                        <tr>
+                            <td>Par personne supplémentaire</td>
+                            <td>+ 5 860</td>
+                            <td>+ 4 241</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Résultat</h3>
+            </div>
+            <div class="panel-body">
+                <div class="form-horizontal" id="resultat" style="display: none">
+                    <div class="form-group">
+                        <label class="col-sm-2">Nombre de personnes</label>
+                        <div class="col-sm-3" id="nbPersonnes"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Revenu fiscal de référence</label>
+                        <div class="col-sm-3" id="revenuFiscalReference"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Eligibilité Île-de-France</label>
+                        <div class="col-sm-3" id="eligibiliteIdf"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Eligibilité régions</label>
+                        <div class="col-sm-3" id="eligibiliteRegions"></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <a id="sauve-capture" class="btn btn-default">Sauvegarder la capture</a>
+                            <button id="envoyer" class="btn btn-default" data-processing-text="<i class='fa fa-circle-o-notch fa-spin'></i> Envoi en cours...">Envoyer le formulaire</button>
+                            <span id="resultat-envoi"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-12"><img id="capture" class="img-responsive"></div>
+                    </div>
+                </div>
+                <pre id="resultat-brut" style="display: none"></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="message">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fermer"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="titre-message"></h4>
+                </div>
+                <div class="modal-body">
+                    <p id="texte-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <script>
+        var dernierResultat;
+
+        function activerFormulaire(etat) {
+            $('input, button').prop('disabled', !etat);
+        }
+        function erreur(titre, texte) {
+            $("#titre-message").text(titre);
+            $("#texte-message").text(texte);
+            $("#message").modal('show');
+        }
+        function effacerResultat() {
+            $('#resultat').hide();
+            $('#resultat-brut').text('').hide();
+        }
+        function afficherResultat(resultat) {
+            // Affichage des données JSON brutes
+            $('#resultat-brut').text(JSON.stringify(resultat, null, "  ")).show();
+
+            // Affichage de la capture.
+            $('#capture').attr('src', 'data:image/jpeg;base64,' + resultat.capture);
+
+            // Bouton de sauvegarde.
+            var nomFichier = 'avis_' + $('#numeroFiscal').val() + '_' + $('#referenceAvis').val() + '.jpg';
+            $('#sauve-capture').attr({
+                'href': $('#capture').attr('src'),
+                'download': nomFichier
+            });
+
+            // Affichage des données relatives au barème
+            $('#resultat').show();
+            var nbPersonnes = 1 + (resultat.nombrePersonnesCharge || 0);
+            if (resultat.declarant2 && resultat.declarant2.nom) {
+                nbPersonnes++;
+            }
+            $('#nbPersonnes').text(nbPersonnes);
+            $('#revenuFiscalReference').text(resultat.revenuFiscalReference);
+
+            // Eligibilité
+            var baremeIdfPrecaire = [
+                7136,  // personne supplémentaire
+                24107, // 1 personne
+                35382, // 2 personnes
+                42495, // 3 personnes
+                49620, // 4 personnes
+                56765, // 5 personnes      
+            ];
+            var baremeRegionsPrecaire = [
+                5434,  // personne supplémentaire
+                18342, // 1 personne
+                26826, // 2 personnes
+                32260, // 3 personnes
+                37690, // 4 personnes
+                43141, // 5 personnes
+            ];
+            var baremeIdfGrandPrecaire = [
+                5860,  // personne supplémentaire
+                19803, // 1 personne
+                29066, // 2 personnes
+                34906, // 3 personnes
+                40758, // 4 personnes
+                46630, // 5 personnes      
+            ];
+            var baremeRegionsGrandPrecaire = [
+                4241,  // personne supplémentaire
+                14308, // 1 personne
+                20925, // 2 personnes
+                25166, // 3 personnes
+                29400, // 4 personnes
+                33652, // 5 personnes
+            ];
+
+            var plafondIdfPrecaire;
+            if (nbPersonnes < baremeIdfPrecaire.length) {
+                plafondIdfPrecaire = baremeIdfPrecaire[nbPersonnes]
+            } else {
+                plafondIdfPrecaire = baremeIdfPrecaire[baremeIdfGrandPrecaire.length - 1] + baremeIdfPrecaire[0] * (nbPersonnes - baremeIdfPrecaire.length + 1);
+            }
+            var plafondIdfGrandPrecaire;
+            if (nbPersonnes < baremeIdfGrandPrecaire.length) {
+                plafondIdfGrandPrecaire = baremeIdfGrandPrecaire[nbPersonnes]
+            } else {
+                plafondIdfGrandPrecaire = baremeIdfGrandPrecaire[baremeIdfGrandPrecaire.length - 1] + baremeIdfGrandPrecaire[0] * (nbPersonnes - baremeIdfGrandPrecaire.length + 1);
+            }
+            var eligibiliteIdfPrecaire = (resultat.revenuFiscalReference <= plafondIdfPrecaire);
+            var eligibiliteIdfGrandPrecaire = (resultat.revenuFiscalReference <= plafondIdfGrandPrecaire);
+            $('#eligibiliteIdf').text(
+                eligibiliteIdfGrandPrecaire ? 'Grand précaire' :
+                eligibiliteIdfPrecaire ? 'Précaire' :
+                'Non')
+                .toggleClass('bg-success', (eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire))
+                .toggleClass('bg-danger', !(eligibiliteIdfPrecaire || eligibiliteIdfGrandPrecaire));
+
+            var plafondRegionsPrecaire;
+            if (nbPersonnes < baremeRegionsPrecaire.length) {
+                plafondRegionsPrecaire = baremeRegionsPrecaire[nbPersonnes]
+            } else {
+                plafondRegionsPrecaire = baremeRegionsPrecaire[baremeRegionsGrandPrecaire.length - 1] + baremeRegionsPrecaire[0] * (nbPersonnes - baremeRegionsPrecaire.length + 1);
+            }
+            var plafondRegionsGrandPrecaire;
+            if (nbPersonnes < baremeRegionsGrandPrecaire.length) {
+                plafondRegionsGrandPrecaire = baremeRegionsGrandPrecaire[nbPersonnes]
+            } else {
+                plafondRegionsGrandPrecaire = baremeRegionsGrandPrecaire[baremeRegionsGrandPrecaire.length - 1] + baremeRegionsGrandPrecaire[0] * (nbPersonnes - baremeRegionsGrandPrecaire.length + 1);
+            }
+            var eligibiliteRegionsPrecaire = (resultat.revenuFiscalReference <= plafondRegionsPrecaire);
+            var eligibiliteRegionsGrandPrecaire = (resultat.revenuFiscalReference <= plafondRegionsGrandPrecaire);
+            $('#eligibiliteRegions').text(
+                eligibiliteRegionsGrandPrecaire ? 'Grand précaire' :
+                eligibiliteRegionsPrecaire ? 'Précaire' :
+                'Non')
+                .toggleClass('bg-success', (eligibiliteRegionsPrecaire || eligibiliteRegionsGrandPrecaire))
+                .toggleClass('bg-danger', !(eligibiliteRegionsPrecaire || eligibiliteRegionsGrandPrecaire));
+        }
+        $('#formulaire-recherche').submit(function () {
+            activerFormulaire(false);
+            effacerResultat();
+            $('#rechercher').button('processing');
+            var numeroFiscal = $('#numeroFiscal').val();
+            var referenceAvis = $('#referenceAvis').val();
+            $.ajax({
+                url: './recherche',
+                data: {
+                    numeroFiscal: numeroFiscal,
+                    referenceAvis: referenceAvis,
+                },
+                dataType: 'json',
+                timeout: 30000,
+            })
+                .done(function (data) {
+                    dernierResultat = {
+                        numeroFiscal: numeroFiscal,
+                        referenceAvis: referenceAvis,
+                        resultat: data,
+                    };
+                    afficherResultat(data);
+                })
+                .fail(function (xhr, status, error) {
+                    if (xhr.responseJSON) {
+                        erreur(xhr.responseJSON.message, xhr.responseJSON.explaination);
+                    } else {
+                        erreur(status, error);
+                    }
+                })
+                .always(function () {
+                    activerFormulaire(true);
+                    $('#rechercher').button('reset');
+                });
+            return false;
+        });
+
+        $('#purger').click(function () {
+            activerFormulaire(false);
+            $('#resultat-purge').text('Purge en cours...').show();
+            $.ajax({
+                url: './purge',
+            })
+                .done(function (data) {
+                    $('#resultat-purge').text('Purge effectuée !');
+                    $('#purger').button('done');
+                })
+                .fail(function (err) {
+                    $('#resultat-purge').text('Erreur !');
+                })
+                .always(function () {
+                    $('#resultat-purge').show();
+                    activerFormulaire(true);
+                    setTimeout(function () {
+                        $('#resultat-purge').hide();
+                    }, 1000);
+                });
+            return false;
+        });
+
+        $('#envoyer').click(function () {
+            activerFormulaire(false);
+            $('#envoyer').button('processing');
+            $.ajax({
+                url: './envoyer',
+                method: 'POST',
+                data: JSON.stringify(dernierResultat),
+                contentType: "application/json",
+            })
+                .done(function (data) {
+                    $('#resultat-envoi').text('Envoi effectué !').show();
+                    setTimeout(function () {
+                        $('#resultat-envoi').hide();
+                    }, 1000);
+                })
+                .fail(function (err) {
+                    if (err.responseJSON) {
+                        erreur(err.responseJSON.message, err.responseJSON.explaination);
+                    } else {
+                        erreur('Erreur', err.responseText);
+                    }
+                })
+                .always(function () {
+                    activerFormulaire(true);
+                    $('#envoyer').button('reset');
+                });
+            return false;
+        });
+    </script>
+
+
+</body>
+
+</html>
