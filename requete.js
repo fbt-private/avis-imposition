@@ -67,6 +67,9 @@ module.exports = function (formURL, numeroFiscal, referenceAvis, done) {
                                     }
                                 })
                                 .then((body) => {
+                                    // Correction bug de non-remplacement des entités.
+                                    body = body.replace(/&nbsp;/g, '\xa0');
+                                    
                                     // Décode les données de la page (utilise le code de svair-api).
                                     parseResponse(body, getYearFromReferenceAvis(referenceAvis), (err, result) => {
                                         if (err) {
