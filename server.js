@@ -16,6 +16,7 @@ const version = '1';
 const formURL = 'https://cfsmsp.impots.gouv.fr/secavis/';
 
 const kizeoFormId = process.env.KIZEO_FORM_ID || '228400';
+const kizeoCompany = 'CEECON';
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -59,7 +60,7 @@ app.post('/identification', function (req, res, next) {
   // Authentification via KIZEO.
   var login = req.body.identifiant;
   var password = req.body.motDePasse;
-  kizeo.login(login, password, function (err, result) {
+  kizeo.login(kizeoCompany, login, password, function (err, result) {
     console.log(err, result);
     if (err || !result || !result.data || !result.data.token) {
       return res.status(403).redirect('/identification?erreur');
@@ -167,7 +168,7 @@ app.get('/recherche', function (req, res, next) {
 });
 
 /**
- * Service d'envoi de donn2es au formulaire KIZEO.
+ * Service d'envoi de données au formulaire KIZEO.
  */
 app.post('/envoyer', function (req, res, next) {
   console.log('POST /envoyer');

@@ -1,10 +1,9 @@
 const root = 'https://www.kizeoforms.com/rest/v3/';
-const company = 'CEECON';
 
 const request = require('request');
 
 module.exports = {
-    login: function (user, password, done) {
+    login: function (company, user, password, done) {
         var options = {
             uri: root + 'login',
             method: 'POST',
